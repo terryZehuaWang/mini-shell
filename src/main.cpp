@@ -1,3 +1,8 @@
+#include <sys/wait.h>
+#include <unistd.h>
+
+#include <cerrno>
+#include <cstring>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -7,7 +12,9 @@ void push_current_to_tokens_logic(
     std::vector<std::string>& tokens);  // tokenize helper
 
 void print_tokens(std::vector<std::string> const& tokens);
-
+void run_external_command(std::vector<std::string> const& tokens);
+std::vector<char*> convert_std_strings_to_c_strings(
+    std::vector<std::string> const& std_strings);
 int main() {
   std::string line;
   std::vector<std::string> tokens;
@@ -17,9 +24,9 @@ int main() {
       std::cout << "\nEOF\n";
       break;
     }
+    std::vector<std::string> tokens = tokenize(line);
 
-    tokens = tokenize(line);
-    print_tokens(tokens);
+    run_external_command(tokens);
   }
   return 0;
 }
@@ -57,7 +64,38 @@ void push_current_to_tokens_logic(std::string& current,
 }
 
 void print_tokens(std::vector<std::string> const& tokens) {
-  std::cout << "tokens:"<<std::endl;
-  for (size_t i = 0; i < tokens.size(); ++i) 
-    std::cout<<tokens[i]<<std::endl;
+  std::cout << "tokens:" << std::endl;
+  for (size_t i = 0; i < tokens.size(); ++i)
+    std::cout << tokens[i] << std::endl;
+}
+
+void run_external_command(std::vector<std::string> const& tokens) {
+  char* command = const_cast<char*>(tokens[0].c_str());
+  std::vector<char*> arguments = convert_std_strings_to_c_strings(tokens);
+  arguments.push_back(nullptr);
+  pid_t pid = fork();
+  if (pid == 0) {
+    execvp(command, arguments.data());
+    std::cerr << "execvp failed" << std::strerror(errno) << std::endl;
+    _exit(127);
+  } else if (pid > 0) {
+    int child_status;
+    while (true) {
+      pid_t waited_pid = waitpid(pid, &child_status, 0);
+      if (waited_pid == -1 && errno == EINTR)  // interrupted by signal
+        continue;
+      break;
+    }
+  } else if (pid == -1) {
+    std::cerr << "fork failed" << std::strerror(errno) << std::endl;
+  }
+}
+
+std::vector<char*> convert_std_strings_to_c_strings(
+    std::vector<std::string> const& std_strings) {
+  std::vector<char*> c_strings;
+  for (std::string const& std_string : std_strings) {
+    c_strings.push_back(const_cast<char*>(std_string.c_str()));
+  }
+  return c_strings;
 }
