@@ -15,9 +15,10 @@ void print_tokens(std::vector<std::string> const& tokens);
 void run_external_command(std::vector<std::string> const& tokens);
 std::vector<char*> convert_std_strings_to_c_strings(
     std::vector<std::string> const& std_strings);
+
+bool handle_builtin(std::vector<std::string> const& tokens);
 int main() {
   std::string line;
-  std::vector<std::string> tokens;
   while (true) {
     std::cout << "minishell$ " << std::flush;
     if (!std::getline(std::cin, line)) {
@@ -25,7 +26,9 @@ int main() {
       break;
     }
     std::vector<std::string> tokens = tokenize(line);
-
+    if (handle_builtin(tokens)) {
+      continue;
+    }
     run_external_command(tokens);
   }
   return 0;
@@ -76,7 +79,7 @@ void run_external_command(std::vector<std::string> const& tokens) {
   pid_t pid = fork();
   if (pid == 0) {
     execvp(command, arguments.data());
-    std::cerr << "execvp failed" << std::strerror(errno) << std::endl;
+    std::cerr << "execvp failed. Error message: " << std::strerror(errno) << std::endl;
     _exit(127);
   } else if (pid > 0) {
     int child_status;
@@ -87,7 +90,7 @@ void run_external_command(std::vector<std::string> const& tokens) {
       break;
     }
   } else if (pid == -1) {
-    std::cerr << "fork failed" << std::strerror(errno) << std::endl;
+    std::cerr << "fork failed. Error message: "  << std::strerror(errno) << std::endl;
   }
 }
 
@@ -98,4 +101,13 @@ std::vector<char*> convert_std_strings_to_c_strings(
     c_strings.push_back(const_cast<char*>(std_string.c_str()));
   }
   return c_strings;
+}
+
+bool handle_builtin(std::vector<std::string> const& tokens) {
+  if (tokens[0] == "cd") {
+    if (chdir(tokens[1].c_str()) != 0) perror("cd");
+    return true;
+  }
+  if (tokens[0] == "exit") std::exit(0);
+  return false;
 }
