@@ -2,12 +2,35 @@
 
 #include <unistd.h>
 
+#include <iostream>
 #include <string>
 #include <vector>
 
-bool try_builtin(std::vector<std::string> const& tokens) {
+#include "executor.hpp"
+#include "job.hpp"
+
+bool try_builtin(std::vector<std::string> const& tokens,
+                 std::vector<Job>& jobs) {
   if (tokens[0] == "cd") {
     if (chdir(tokens[1].c_str()) != 0) perror("cd");
+    return true;
+  }
+  if (tokens[0] == "jobs") {
+    if (tokens.size() == 1) {
+      if (jobs.size() == 0) {
+        std::cout << "No jobs exist" << std::endl;
+        return true;
+      }
+      reap_background(jobs);
+      for (size_t i = 0; i < jobs.size(); i++)
+        std::cout << jobs[i].jid << " " << jobs[i].pid << " "
+                  << jobs[i].command_str << " "
+                  << (jobs[i].state == JobState::Running ? "Runing" : "Done")
+                  << std::endl;
+    } else {
+      std::cout << "jobs: too many arguments" << std::endl;
+    }
+
     return true;
   }
   if (tokens[0] == "exit") std::exit(0);

@@ -5,7 +5,8 @@ SRC = src/main.cpp \
       src/tokenizer.cpp \
       src/builtins.cpp \
       src/executor.cpp \
-      src/redirections_parser.cpp
+      src/redirections_parser.cpp \
+	   
 
 OBJ = $(SRC:.cpp=.o)
 

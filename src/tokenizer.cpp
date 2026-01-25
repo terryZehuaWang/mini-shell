@@ -36,6 +36,6 @@ void push_current_to_tokens_logic(std::string& current,
 
 void print_tokens(std::vector<std::string> const& tokens) {
   std::cout << "tokens:" << std::endl;
-  for (size_t i = 0; i < tokens.size(); ++i)
+  for (size_t i = 0; i < tokens.size(); i++)
     std::cout << tokens[i] << std::endl;
 }
