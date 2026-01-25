@@ -67,9 +67,24 @@ void foreground_wait(int const& pid) {
   int child_status;
   while (true) {
     pid_t waited_pid = waitpid(pid, &child_status, 0);
-    if (waited_pid == -1 && errno == EINTR)  // interrupted by signal
-      continue;
+    if (waited_pid == -1 && errno == EINTR) continue;
+    std::cerr << "waitpid failed: " << std::strerror(errno) << "\n";
     break;
+  }
+}
+
+void reap_background() {
+  int status;
+  while (true) {
+    pid_t waited_pid = waitpid(-1, &status, WNOHANG);
+    if (waited_pid > 0)
+      continue;
+    else if (waited_pid == 0)
+      break;
+    else {  //(waited_pid == -1)
+      if (errno == EINTR) continue;
+      if (errno == ECHILD) break;
+    }
   }
 }
 
