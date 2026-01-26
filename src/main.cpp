@@ -23,16 +23,17 @@ int main() {
     }
 
     std::vector<std::string> tokens = tokenize(line);
-
+    if (tokens.empty()) continue;
     if (try_builtin(tokens, jobs)) continue;
 
     if (tokens[tokens.size() - 1] ==
-        "&") {  //& does not do anything for built in
+        "&") {  // is& does not do anything for built in
       tokens.pop_back();
       is_foreground = false;
     } else {
       is_foreground = true;
     }
+
     if (try_external_command_with_redirections(tokens, is_foreground, jobs,
                                                line))
       continue;

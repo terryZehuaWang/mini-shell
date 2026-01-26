@@ -11,13 +11,17 @@
 
 bool try_builtin(std::vector<std::string> const& tokens,
                  std::vector<Job>& jobs) {
+  if (tokens.empty()) return false;
   if (tokens[0] == "cd") {
-    if (chdir(tokens[1].c_str()) != 0) perror("cd");
+    if (tokens.size() < 2)
+      std::cout << "cd: too few arguments" << std::endl;
+    else if (chdir(tokens[1].c_str()) != 0)
+      perror("cd");
     return true;
   }
   if (tokens[0] == "jobs") {
     if (tokens.size() == 1) {
-      if (jobs.size() == 0) {
+      if (jobs.empty()) {
         std::cout << "No jobs exist" << std::endl;
         return true;
       }
@@ -25,7 +29,7 @@ bool try_builtin(std::vector<std::string> const& tokens,
       for (size_t i = 0; i < jobs.size(); i++)
         std::cout << jobs[i].jid << " " << jobs[i].pid << " "
                   << jobs[i].command_str << " "
-                  << (jobs[i].state == JobState::Running ? "Runing" : "Done")
+                  << (jobs[i].state == JobState::Running ? "Running" : "Done")
                   << std::endl;
     } else {
       std::cout << "jobs: too many arguments" << std::endl;

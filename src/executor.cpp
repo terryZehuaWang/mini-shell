@@ -51,8 +51,7 @@ bool try_external_command_with_redirections(
         dup2(fd, (direction_str == "<") ? STDIN_FILENO : STDOUT_FILENO));
     close(fd);
     execvp(arguments[0], arguments.data());
-    std::cerr << "execvp failed. Error message: " << std::strerror(errno)
-              << std::endl;
+    perror("execvp");
     _exit(127);
 
   } else if (pid == -1) {
@@ -76,8 +75,7 @@ void foreground_wait(pid_t const& pid) {
   while (true) {
     pid_t waited_pid = waitpid(pid, &child_status, 0);
     if (waited_pid == -1 && errno == EINTR) continue;
-    if (waited_pid == -1)
-      std::cerr << "waitpid failed: " << std::strerror(errno) << "\n";
+    if (waited_pid == -1) perror("waited pid");
     break;
   }
 }
@@ -114,13 +112,13 @@ std::vector<char*> convert_std_strings_to_c_strings(
 
 void exit_on_open_error(int fd) {
   if (fd < 0) {
-    std::cerr << "open failed: " << std::strerror(errno) << "\n";
+    perror("open");
     _exit(1);
   }
 }
 void exit_on_dup2_error(int dup2_return) {
   if (dup2_return < 0) {
-    std::cerr << "dup2 failed: " << std::strerror(errno) << "\n";
+    perror("dup2");
     _exit(1);
   }
 }

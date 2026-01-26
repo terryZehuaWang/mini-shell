@@ -11,7 +11,7 @@ bool parse_redirections(std::vector<std::string> const& tokens,
   for (size_t i = 0; i < tokens.size(); i++) {
     if (tokens[i] == "<" || tokens[i] == ">" || tokens[i] == ">>") {
       if (i + 1 >= tokens.size()) {
-        std::cerr << "syntax error: expected file after <<tokens[i]"
+        std::cerr << "syntax error: expected file after" << tokens[i]
                   << std::endl;
         return false;
       }
