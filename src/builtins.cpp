@@ -12,6 +12,14 @@
 bool try_builtin(std::vector<std::string> const& tokens,
                  std::vector<Job>& jobs) {
   if (tokens.empty()) return false;
+  if (tokens[0] == "cd" || tokens[0] == "jobs" || tokens[0] == "exit") {
+    for (int i = 0; i < (int)tokens.size(); i++) {
+      if (tokens[i] == "|")
+        std::cout << "minishell: pipeline with builtins not supported"
+                  << std::endl;
+      return true;
+    }
+  }
   if (tokens[0] == "cd") {
     if (tokens.size() < 2)
       std::cout << "cd: too few arguments" << std::endl;
