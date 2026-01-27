@@ -5,8 +5,8 @@
 #include "builtins.hpp"
 #include "executor.hpp"
 #include "job.hpp"
+#include "pipeline_parser.hpp"
 #include "redirections_parser.hpp"
-#include "split_pipeline.hpp"
 #include "tokenizer.hpp"
 int main() {
   std::string line;
@@ -27,16 +27,23 @@ int main() {
     if (tokens.empty()) continue;
     if (try_builtin(tokens, jobs)) continue;
 
-    if (tokens[tokens.size() - 1] == "&") {  // builtins does not support &
+    if (found_pipeline_operator(tokens)) {
+      execute_external_command_with_pipeline(tokens);
+      continue;
+    }
+
+    if (tokens[tokens.size() - 1] == "&") {
       tokens.pop_back();
       is_foreground = false;
     } else {
       is_foreground = true;
     }
-    if (try_external_command_with_pipeline(tokens)) continue;
-    if (try_external_command_with_redirections(tokens, is_foreground, jobs,
-                                               line))
+
+    if (redirection_operator_exist(tokens)) {
+      execute_external_command_with_redirections(tokens, is_foreground, jobs,
+                                                 line);
       continue;
+    }
     try_external_command(tokens, is_foreground, jobs, line);
   }
   return 0;

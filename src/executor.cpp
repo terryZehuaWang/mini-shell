@@ -14,30 +14,27 @@
 #include <vector>
 
 #include "job.hpp"
+#include "pipeline_parser.hpp"
 #include "redirections_parser.hpp"
-#include "split_pipeline.hpp"
 
-// all bool functions begin with try return true for repl to continue to next
-// loop, false otherwise
-bool try_external_command_with_pipeline(
+void execute_external_command_with_pipeline(
     std::vector<std::string> const& tokens) {
   std::vector<std::vector<std::string>> commands;
-  if (!try_split_pipeline(tokens, commands)) return false;
+  if (!try_split_pipeline(tokens, commands)) return;
   std::vector<std::array<int, 2>> pipe_fds;
   for (int i = 0; i < (int)commands.size() - 1; i++) {
     int pipe_fd[2];
     if (pipe(pipe_fd) == -1) {
       perror("pipe");
-      return true;
     }
     pipe_fds.push_back({pipe_fd[0], pipe_fd[1]});
   }
   std::vector<pid_t> pids;
-  for (int i = 0; i < (int)commands.size(); i++) {
+  for (size_t i = 0; i < commands.size(); i++) {
     pid_t pid = fork();
     if (pid == 0) {
       if (i > 0) exit_on_dup2_error(dup2(pipe_fds[i - 1][0], STDIN_FILENO));
-      if (i < (int)commands.size() - 1)
+      if (i < commands.size() - 1)
         exit_on_dup2_error(dup2(pipe_fds[i][1], STDOUT_FILENO));
       close_all_pipe_fds(pipe_fds);
       std::vector<char*> arguments =
@@ -55,25 +52,23 @@ bool try_external_command_with_pipeline(
   }
   close_all_pipe_fds(pipe_fds);
 
-  for (int i = 0; i < (int)pids.size(); i++) foreground_wait(pids[i]);
-
-  return true;
+  for (size_t i = 0; i < pids.size(); i++) foreground_wait(pids[i]);
 }
 void close_all_pipe_fds(const std::vector<std::array<int, 2>>& pipe_fds) {
-  for (int i = 0; i < (int)pipe_fds.size(); i++) {
+  for (size_t i = 0; i < pipe_fds.size(); i++) {
     close(pipe_fds[i][0]);
     close(pipe_fds[i][1]);
   }
 }
 
-bool try_external_command_with_redirections(
+void execute_external_command_with_redirections(
     std::vector<std::string> const& tokens, bool const& is_foreground,
     std::vector<Job>& jobs, std::string const& line) {
   std::vector<std::string> token_arguments;
   std::string direction_str;
   std::string target_file;
   if (!parse_redirections(tokens, token_arguments, direction_str, target_file))
-    return false;
+    return;
 
   std::vector<char*> arguments =
       convert_std_strings_to_c_strings(token_arguments);
@@ -109,16 +104,16 @@ bool try_external_command_with_redirections(
     std::cerr << "fork failed. Error message: " << std::strerror(errno)
               << std::endl;
 
-    return true;  // to avoid printing fork error message again in try external
-                  // command
+    return;  // to avoid printing fork error message again in try external
+             // command
   }
   if (is_foreground) {
     foreground_wait(pid);
   } else {
-    Job job{(int)jobs.size(), pid, line, JobState::Running};
+    Job job{(int)jobs.size() + 1, pid, line, JobState::Running};
     jobs.push_back(job);
   }
-  return true;
+  return;
 }
 
 void foreground_wait(pid_t const& pid) {
@@ -137,7 +132,7 @@ void reap_background(std::vector<Job>& jobs) {
     pid_t waited_pid = waitpid(-1, &status, WNOHANG);
     if (waited_pid > 0) {
       // std::cout << "reaped" << waited_pid << std::endl;
-      for (int i = 0; i < (int)jobs.size(); i++) {
+      for (size_t i = 0; i < jobs.size(); i++) {
         if (jobs[i].pid == waited_pid) {
           jobs[i].state = JobState::Done;
         }
@@ -189,7 +184,7 @@ void try_external_command(std::vector<std::string> const& tokens,
     if (is_foreground)
       foreground_wait(pid);
     else {
-      Job job{(int)jobs.size(), pid, line, JobState::Running};
+      Job job{(int)jobs.size() + 1, pid, line, JobState::Running};
       jobs.push_back(job);
     }
   } else if (pid == -1) {

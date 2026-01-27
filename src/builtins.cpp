@@ -12,14 +12,15 @@
 bool try_builtin(std::vector<std::string> const& tokens,
                  std::vector<Job>& jobs) {
   if (tokens[0] == "cd" || tokens[0] == "jobs" || tokens[0] == "exit") {
-    for (int i = 0; i < (int)tokens.size(); i++) {
+    for (size_t i = 0; i < tokens.size(); i++) {
       if (tokens[i] == "|") {
         std::cout << "minishell: pipeline with builtins not supported"
                   << std::endl;
         return true;
       }
       if (tokens[i] == "&") {
-        std::cout << "minishell: background with builtins" << std::endl;
+        std::cout << "minishell: background with builtins not supported"
+                  << std::endl;
         return true;
       }
     }
@@ -49,6 +50,34 @@ bool try_builtin(std::vector<std::string> const& tokens,
 
     return true;
   }
+  if (tokens[0] == "help") {
+    if (tokens.size() == 1) {
+      print_help_message();
+    } else {
+      std::cout << "help: too many arguments" << std::endl;
+    }
+  }
   if (tokens[0] == "exit") std::exit(0);
   return false;
+}
+
+void print_help_message() {
+  std::cout << "minishell help" << std::endl
+            << "Builtins:" << std::endl
+            << "  cd <dir>" << std::endl
+            << "  jobs" << std::endl
+            << "  exit" << std::endl
+            << "  help" << std::endl
+            << std::endl
+            << "Operators:" << std::endl
+            << "  <    input redirection" << std::endl
+            << "  >    output redirection" << std::endl
+            << "  >>   output append" << std::endl
+            << "  &    background execution" << std::endl
+            << "  |    pipeline (foreground only)" << std::endl
+            << std::endl
+            << "Notes:" << std::endl
+            << "  - pipelines are foreground only" << std::endl
+            << "  - builtins cannot be used with | or &" << std::endl
+            << "  - redirection within pipelines is not supported" << std::endl;
 }

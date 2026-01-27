@@ -4,3 +4,5 @@
 bool parse_redirections(std::vector<std::string> const& tokens,
                         std::vector<std::string>& token_arguments,
                         std::string& direction_str, std::string& target_file);
+
+bool redirection_operator_exist(std::vector<std::string> const& tokens);

@@ -1,4 +1,4 @@
-#include "split_pipeline.hpp"
+#include "pipeline_parser.hpp"
 
 #include <iostream>
 #include <string>
@@ -6,38 +6,47 @@
 bool try_split_pipeline(std::vector<std::string> const& tokens,
                         std::vector<std::vector<std::string>>& commands) {
   commands.clear();
-  bool found_pipeline_operator = false;
+  bool found_redirection_operator = false;
 
   std::vector<std::string> current;
-  for (int i = 0; i < (int)tokens.size(); i++) {
+  for (size_t i = 0; i < tokens.size(); i++) {
     if (tokens[i] != "|") {
       current.push_back(tokens[i]);
-      if (i + 1 < (int)tokens.size() && tokens[i + 1] == "|" &&
-          tokens[i] == "&") {
-        std::cout
-            << "minishell: pipe operator does not support background operator"
-            << std::endl;
-      }
-
+      if (tokens[i] == "<" || tokens[i] == ">" || tokens[i] == ">>")
+        found_redirection_operator = true;
     } else {  // tokens[i] == "|"
       if (current.empty()) {
-        std::cout << "pipe operator must have at least 1 argument before it"
-                  << std::endl;
+        std::cout << "missing command before pipe operator" << std::endl;
         return false;
       }
       commands.push_back(current);
       current.clear();
-      found_pipeline_operator = true;
     }
   }
-  if (found_pipeline_operator && current.empty()) {
-    std::cout << "pipe operator must have at least 1 argument after it"
+
+  if (tokens[tokens.size() - 1] == "&") {
+    std::cout << "pipe operator does not support background operator"
               << std::endl;
     return false;
   }
+  if (found_redirection_operator) {
+    std::cout << "pipe operator does not support redirection operator"
+              << std::endl;
+    return false;
+  }
+  if (current.empty()) {
+    std::cout << "missing command after pipe operator" << std::endl;
+    return false;
+  }
+
   commands.push_back(current);
-  // print_split_tokens(commands);
-  return found_pipeline_operator;
+  return true;
+}
+
+bool found_pipeline_operator(std::vector<std::string> const& tokens) {
+  for (size_t i = 0; i < tokens.size(); i++)
+    if (tokens[i] == "|") return true;
+  return false;
 }
 
 void print_split_tokens(std::vector<std::vector<std::string>> const& commands) {
