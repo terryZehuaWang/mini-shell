@@ -1,0 +1,46 @@
+# MiniShell — A Minimal Unix Shell in C++
+
+MiniShell is a small Unix-like shell implemented in C++ using POSIX system calls.
+It supports command execution, I/O redirection, background jobs, and foreground pipelines.
+
+---
+
+## Features
+### Built-in Commands
+- `cd <dir>` — change working directory
+- `jobs` — list background jobs and their states
+- `exit` — exit the shell
+- `help` — display supported commands and operators
+
+### I/O Redirection
+- Input redirection: `< file`
+- Output redirection: `> file`
+- Output append: `>> file`
+
+### Background Jobs
+- Run commands in the background using `&`
+- Maintain a job table (job ID, PID, command, state)
+- Reap finished background jobs using `waitpid(WNOHANG)`
+
+### Pipelines
+- Foreground pipelines using `|`
+- Multiple processes executing commands connected with pipes
+
+### Command Execution
+-  Execute external programs using `fork()` and `execvp()`
+-  Basic error handling for common syscalls (fork/execvp/open/dup2/waitpid)
+
+---
+
+## Supported Syntax (Examples)
+
+```sh
+help
+ls
+echo hello > out.txt
+cat < out.txt
+echo hi >> out.txt
+sleep 5 &
+jobs
+ls | wc -l
+ls | sort | wc -l
