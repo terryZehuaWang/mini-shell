@@ -5,6 +5,7 @@ SRC = src/main.cpp \
       src/tokenizer.cpp \
       src/builtins.cpp \
       src/executor.cpp \
+      src/split_pipeline.cpp\
       src/redirections_parser.cpp \
 	   
 

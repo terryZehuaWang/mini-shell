@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#include <array>
 #include <cerrno>
 #include <cstring>
 #include <iostream>
@@ -14,6 +15,56 @@
 
 #include "job.hpp"
 #include "redirections_parser.hpp"
+#include "split_pipeline.hpp"
+
+// all bool functions begin with try return true for repl to continue to next
+// loop, false otherwise
+bool try_external_command_with_pipeline(
+    std::vector<std::string> const& tokens) {
+  std::vector<std::vector<std::string>> commands;
+  if (!try_split_pipeline(tokens, commands)) return false;
+  std::vector<std::array<int, 2>> pipe_fds;
+  for (int i = 0; i < (int)commands.size() - 1; i++) {
+    int pipe_fd[2];
+    if (pipe(pipe_fd) == -1) {
+      perror("pipe");
+      return true;
+    }
+    pipe_fds.push_back({pipe_fd[0], pipe_fd[1]});
+  }
+  std::vector<pid_t> pids;
+  for (int i = 0; i < (int)commands.size(); i++) {
+    pid_t pid = fork();
+    if (pid == 0) {
+      if (i > 0) exit_on_dup2_error(dup2(pipe_fds[i - 1][0], STDIN_FILENO));
+      if (i < (int)commands.size() - 1)
+        exit_on_dup2_error(dup2(pipe_fds[i][1], STDOUT_FILENO));
+      close_all_pipe_fds(pipe_fds);
+      std::vector<char*> arguments =
+          convert_std_strings_to_c_strings(commands[i]);
+      arguments.push_back(nullptr);
+      execvp(arguments[0], arguments.data());
+      perror("execvp");
+      _exit(127);
+    } else if (pid > 0)
+      pids.push_back(pid);
+    else {  // pid == -1
+      perror("fork");
+      break;  // close all pipe fds and wait already forked children
+    }
+  }
+  close_all_pipe_fds(pipe_fds);
+
+  for (int i = 0; i < (int)pids.size(); i++) foreground_wait(pids[i]);
+
+  return true;
+}
+void close_all_pipe_fds(const std::vector<std::array<int, 2>>& pipe_fds) {
+  for (int i = 0; i < (int)pipe_fds.size(); i++) {
+    close(pipe_fds[i][0]);
+    close(pipe_fds[i][1]);
+  }
+}
 
 bool try_external_command_with_redirections(
     std::vector<std::string> const& tokens, bool const& is_foreground,
@@ -132,8 +183,7 @@ void try_external_command(std::vector<std::string> const& tokens,
   pid_t pid = fork();
   if (pid == 0) {
     execvp(command, arguments.data());
-    std::cerr << "execvp failed. Error message: " << std::strerror(errno)
-              << std::endl;
+    perror("execvp");
     _exit(127);
   } else if (pid > 0) {
     if (is_foreground)

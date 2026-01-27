@@ -26,6 +26,7 @@ std::vector<std::string> tokenize(const std::string& line) {
   }
   return tokens;
 }
+
 void push_current_to_tokens_logic(std::string& current,
                                   std::vector<std::string>& tokens) {
   if (!current.empty()) {
