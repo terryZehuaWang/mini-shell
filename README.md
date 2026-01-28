@@ -3,6 +3,7 @@
 MiniShell is a small UNIX-like shell implemented in C++ using POSIX system calls.
 It supports command execution, I/O redirection, background jobs, and foreground pipelines.
 
+Demo video (<2 minutes): https://www.youtube.com/watch?v=flBpD5-LZeY 
 ---
 
 ## Features
