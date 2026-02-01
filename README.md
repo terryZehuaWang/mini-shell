@@ -6,7 +6,10 @@ It supports command execution, I/O redirection, background jobs, and foreground 
 Demo video (<2 minutes): https://www.youtube.com/watch?v=flBpD5-LZeY 
 
 ---
-
+## Environment / Requirements
+- POSIX-compliant system (Linux)
+- Tested in a Linux dev container
+  
 ## Features
 ### Built-in Commands
 - `cd <dir>` — change working directory
