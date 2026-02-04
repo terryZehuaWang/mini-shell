@@ -48,4 +48,4 @@ echo hi >> out.txt
 sleep 5 &
 jobs
 ls | wc -l
-ls | sort | wc -l
+ls | sort | head -5
